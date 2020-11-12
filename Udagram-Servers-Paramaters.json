@@ -1,0 +1,10 @@
+[
+	{
+		"ParameterKey": "ProjectName",
+		"ParameterValue": "Deploy a high-availability web app using CloudFormation"
+	},
+    {
+		"ParameterKey": "NetworkName",
+		"ParameterValue": "Udagram"
+    }
+]

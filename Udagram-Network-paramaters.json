@@ -1,0 +1,30 @@
+[
+	{
+		"ParameterKey": "ProjectName",
+		"ParameterValue": "Deploy a high-availability web app using CloudFormation"
+	},
+    {
+		"ParameterKey": "NetworkName",
+		"ParameterValue": "Udagram"
+	},
+	{
+		"ParameterKey": "VPCCIDR",
+		"ParameterValue": "192.168.0.0/16"
+	},
+    {
+		"ParameterKey": "PvtVPCSubnet1CIDR",
+		"ParameterValue": "192.168.0.0/24"
+	},
+	{
+		"ParameterKey": "PvtVPCSubnet2CIDR",
+		"ParameterValue": "192.168.1.0/24"
+	},
+	{
+		"ParameterKey": "PubVPCSubnet1CIDR",
+		"ParameterValue": "192.168.2.0/24"
+	},
+	{
+		"ParameterKey": "PubVPCSubnet2CIDR",
+		"ParameterValue": "192.168.3.0/24"
+	}
+]

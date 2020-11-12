@@ -1,0 +1,274 @@
+Description: >
+    Deploy a high-availability web app using CloudFormation
+    Austin Meyer
+Parameters:
+
+    ProjectName:
+        Description: This is the name of the project as a whole
+        Type: String
+
+    NetworkName:
+        Description: This is the Name that will accompany other parts like subnets and what not.
+        Type: String
+
+    VPCCIDR: 
+        Description: CIDR notation VPC
+        Type: String
+
+    PvtVPCSubnet1CIDR:
+        Description: CIDR IP range for the private subnet in avalibility zone 1
+        Type: String
+
+    PvtVPCSubnet2CIDR:
+        Description: CIDR IP range for the private subnet in avalibility zone 2
+        Type: String
+
+    PubVPCSubnet1CIDR:
+        Description: CIDR IP range for the public subnet in avalibility zone 1
+        Type: String
+
+    PubVPCSubnet2CIDR:
+        Description: CIDR IP range for the public subnet in avalibility zone 2
+        Type: String
+
+Resources:
+
+    VPC: 
+        Type: AWS::EC2::VPC
+        Properties:
+            CidrBlock: !Ref VPCCIDR
+            EnableDnsHostnames: true
+            Tags: 
+                - Key: Name 
+                  Value: !Ref NetworkName
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+
+    InternetGateway:
+        Type: AWS::EC2::InternetGateway
+        Properties:
+            Tags:
+                - Key: Name
+                  Value: !Ref NetworkName
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+            
+    InternetGatewayAttachment:
+        Type: AWS::EC2::VPCGatewayAttachment
+        Properties:
+            InternetGatewayId: !Ref InternetGateway
+            VpcId: !Ref VPC
+
+    PvtVPCSubnet1: 
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 0, !GetAZs '' ]
+            CidrBlock: !Ref PvtVPCSubnet1CIDR
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${NetworkName} PVT Subnet Availability Zone 1
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+
+    PvtVPCSubnet2: 
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 1, !GetAZs '' ]
+            CidrBlock: !Ref PvtVPCSubnet2CIDR
+            MapPublicIpOnLaunch: false
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${NetworkName} PVT Subnet Availability Zone 2
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+
+    PubVPCSubnet1: 
+      Type: AWS::EC2::Subnet
+      Properties:
+          VpcId: !Ref VPC
+          AvailabilityZone: !Select [ 0, !GetAZs '' ]
+          CidrBlock: !Ref PubVPCSubnet1CIDR
+          MapPublicIpOnLaunch: true
+          Tags: 
+              - Key: Name 
+                Value: !Sub ${NetworkName} PUB Subnet Availability Zone 1
+              - Key: ProjectName
+                Value: !Ref ProjectName
+
+    PubVPCSubnet2: 
+        Type: AWS::EC2::Subnet
+        Properties:
+            VpcId: !Ref VPC
+            AvailabilityZone: !Select [ 1, !GetAZs '' ]
+            CidrBlock: !Ref PubVPCSubnet2CIDR
+            MapPublicIpOnLaunch: true
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${NetworkName} PUB Subnet Availability Zone 2
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+
+    NatGateway1EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: InternetGatewayAttachment
+        Properties: 
+            Domain: vpc
+
+    NatGateway2EIP:
+        Type: AWS::EC2::EIP
+        DependsOn: InternetGatewayAttachment
+        Properties:
+            Domain: vpc
+
+    NatGateway1: 
+        Type: AWS::EC2::NatGateway
+        Properties: 
+            AllocationId: !GetAtt NatGateway1EIP.AllocationId
+            SubnetId: !Ref PubVPCSubnet1
+
+    NatGateway2: 
+        Type: AWS::EC2::NatGateway
+        Properties:
+            AllocationId: !GetAtt NatGateway2EIP.AllocationId
+            SubnetId: !Ref PubVPCSubnet2
+    
+    PvtRouteTable1:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+            VpcId: !Ref VPC
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${NetworkName} Private Routes Availability Zone 1
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+
+    DefaultPvtRoute1:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PvtRouteTable1
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId: !Ref NatGateway1
+
+    PvtSubnet1RouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PvtRouteTable1
+            SubnetId: !Ref PvtVPCSubnet1
+
+    PvtRouteTable2:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+            VpcId: !Ref VPC
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${NetworkName} Private Routes Availability Zone 2
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+
+    DefaultPvtRoute2:
+        Type: AWS::EC2::Route
+        Properties:
+            RouteTableId: !Ref PvtRouteTable2
+            DestinationCidrBlock: 0.0.0.0/0
+            NatGatewayId: !Ref NatGateway2
+
+    PvtVPCSubnet2RouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PvtRouteTable2
+            SubnetId: !Ref PvtVPCSubnet2
+
+    PubRouteTable:
+        Type: AWS::EC2::RouteTable
+        Properties: 
+            VpcId: !Ref VPC
+            Tags: 
+                - Key: Name 
+                  Value: !Sub ${NetworkName} Public Routes
+                - Key: ProjectName
+                  Value: !Ref ProjectName
+
+    DefaultPubRoute: 
+        Type: AWS::EC2::Route
+        DependsOn: InternetGatewayAttachment
+        Properties: 
+            RouteTableId: !Ref PubRouteTable
+            DestinationCidrBlock: 0.0.0.0/0
+            GatewayId: !Ref InternetGateway
+
+    PubSubnet1RouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PubRouteTable
+            SubnetId: !Ref PubVPCSubnet1
+
+    PubSubnet2RouteTableAssociation:
+        Type: AWS::EC2::SubnetRouteTableAssociation
+        Properties:
+            RouteTableId: !Ref PubRouteTable
+            SubnetId: !Ref PubVPCSubnet2
+
+Outputs: 
+
+    VPC: 
+        Description: A reference to the created VPC
+        Value: !Ref VPC
+        Export:
+          Name: !Sub ${NetworkName}-VPC
+
+    VPCPublicRouteTable:
+        Description: Public Routing
+        Value: !Ref PubRouteTable
+        Export:
+          Name: !Sub ${NetworkName}-PUB-Routing
+
+    VPCPrivateRouteTable1:
+        Description: Private Routing AZ1
+        Value: !Ref PvtRouteTable1
+        Export:
+          Name: !Sub ${NetworkName}-PVT1-Routing
+
+    VPCPrivateRouteTable2:
+        Description: Private Routing AZ2
+        Value: !Ref PvtRouteTable2
+        Export:
+          Name: !Sub ${NetworkName}-PVT2-Routing
+
+    PrivateSubnets:
+        Description: All private subnets
+        Value: !Join [ ",", [ !Ref PvtVPCSubnet1, !Ref PvtVPCSubnet2 ]]
+        Export:
+          Name: !Sub ${NetworkName}-PVT-Subnets
+
+    PublicSubnets:
+        Description: All public subnets
+        Value: !Join [ ",", [ !Ref PubVPCSubnet1, !Ref PubVPCSubnet2 ]]
+        Export:
+          Name: !Sub ${NetworkName}-PUB-Subnets
+
+    PvtVPCSubnet1:
+        Description: Private subnet in AZ1
+        Value: !Ref PvtVPCSubnet1
+        Export:
+          Name: !Sub ${NetworkName}-PVT1-Subnet
+
+    PvtVPCSubnet2: 
+        Description: Private subnet in AZ2
+        Value: !Ref PvtVPCSubnet2
+        Export:
+          Name: !Sub ${NetworkName}-PVT2-Subnet
+
+    PubVPCSubnet1:
+        Description: Public subnet in AZ1
+        Value: !Ref PubVPCSubnet1
+        Export:
+          Name: !Sub ${NetworkName}-PUB1-Subnet
+
+    PubVPCSubnet2: 
+        Description: Public subnet in AZ1
+        Value: !Ref PubVPCSubnet2
+        Export:
+          Name: !Sub ${NetworkName}-PUB2-Subnet
