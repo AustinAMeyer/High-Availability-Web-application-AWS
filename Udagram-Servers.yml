@@ -25,10 +25,11 @@ Resources:
         FromPort: 80
         ToPort: 80
         CidrIp: 0.0.0.0/0
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: 0.0.0.0/0
+      # Enable this if you are going to build a test instance of the stack
+      # - IpProtocol: tcp
+      #   FromPort: 22
+      #   ToPort: 22
+      #   CidrIp: 0.0.0.0/0
       SecurityGroupEgress:
       - IpProtocol: tcp
         FromPort: 0
@@ -40,23 +41,24 @@ Resources:
       - Key: ProjectName
         Value: Ref! ProjectName
 
-  BastionHostServerSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow http to our hosts and SSH locally
-      VpcId:
-        Fn::ImportValue:
-          !Sub "${NetworkName}-VPC"
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 22
-        ToPort: 22
-        CidrIp: 192.168.86.255/32
-      Tags:
-      - Key: Name
-        Value: Sub! NetworkName Security Group
-      - Key: ProjectName
-        Value: Ref! ProjectName
+#This is for a test enviroment only
+  # BastionHostServerSecurityGroup:
+  #   Type: AWS::EC2::SecurityGroup
+  #   Properties:
+  #     GroupDescription: Allow http to our hosts and SSH locally
+  #     VpcId:
+  #       Fn::ImportValue:
+  #         !Sub "${NetworkName}-VPC"
+  #     SecurityGroupIngress:
+  #     - IpProtocol: tcp
+  #       FromPort: 22
+  #       ToPort: 22
+  #       CidrIp: 192.168.86.255/32
+  #     Tags:
+  #     - Key: Name
+  #       Value: Sub! NetworkName Security Group
+  #     - Key: ProjectName
+  #       Value: Ref! ProjectName
 
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -193,31 +195,32 @@ Resources:
       VpcId: 
         Fn::ImportValue:
           Fn::Sub: "${NetworkName}-VPC"
+          
+# Use this if you are making a Test instance and you would like to remote into the machine
+  # BastionHostLaunchConfiguration:
+  #   Type: AWS::AutoScaling::LaunchConfiguration
+  #   Properties:
+  #     ImageId: ami-06e54d05255faf8f6
+  #     SecurityGroups:
+  #     - Ref: BastionHostServerSecurityGroup
+  #     InstanceType: t3.small
+  #     BlockDeviceMappings:
+  #     - DeviceName: "/dev/sdk"
+  #       Ebs:
+  #         VolumeSize: '10'
 
-  BastionHostLaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
-    Properties:
-      ImageId: ami-06e54d05255faf8f6
-      SecurityGroups:
-      - Ref: BastionHostServerSecurityGroup
-      InstanceType: t3.small
-      BlockDeviceMappings:
-      - DeviceName: "/dev/sdk"
-        Ebs:
-          VolumeSize: '10'
-
-  BastionHostAutoScallingGroup:
-    Type: AWS::AutoScaling::AutoScalingGroup
-    Properties:
-      VPCZoneIdentifier:
-      - Fn::ImportValue: 
-          !Sub "${NetworkName}-PUB-Subnets"
-      LaunchConfigurationName:
-        Ref: BastionHostLaunchConfiguration
-      MinSize: '2'
-      MaxSize: '2'
-      TargetGroupARNs:
-      - Ref: WebAppTargetGroup
+  # BastionHostAutoScallingGroup:
+  #   Type: AWS::AutoScaling::AutoScalingGroup
+  #   Properties:
+  #     VPCZoneIdentifier:
+  #     - Fn::ImportValue: 
+  #         !Sub "${NetworkName}-PUB-Subnets"
+  #     LaunchConfigurationName:
+  #       Ref: BastionHostLaunchConfiguration
+  #     MinSize: '2'
+  #     MaxSize: '2'
+  #     TargetGroupARNs:
+  #     - Ref: WebAppTargetGroup
 
 Outputs:
   WebAppLoadBalancerDNSName:
