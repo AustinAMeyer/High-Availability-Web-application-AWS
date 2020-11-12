@@ -6,7 +6,7 @@ You need to build the Udagram Network stack first to have the Udagram Server sta
 The command line used to create the stacks should look like below:
 
 Network stack:
-`create.sh UdagramServers Udagram-Network.yml Udagram-Network-Paramaters.json
+`create.sh UdagramServers Udagram-Network.yml Udagram-Network-Paramaters.json`
 
 Server stack:
-`create.sh UdagramServers Udagram-Servers.yml Udagram-Servers-Paramaters.json
+`create.sh UdagramServers Udagram-Servers.yml Udagram-Servers-Paramaters.json`
