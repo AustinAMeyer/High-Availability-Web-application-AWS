@@ -1,4 +1,4 @@
-# High-Availability-Web-application-AWS
+# High-Availability-Web-Application-AWS
 This is a project where I created a high availability web app in AWS
 
 You need to build the Udagram Network stack first to have the Udagram Server stack work.
@@ -10,3 +10,6 @@ Network stack:
 
 Server stack:
 `create.sh UdagramServers Udagram-Servers.yml Udagram-Servers-Paramaters.json`
+
+### Tools Used
+AWS Cloudformation
